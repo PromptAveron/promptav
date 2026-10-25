@@ -606,7 +606,7 @@ export function AdminDashboard() {
       {error && <Alert tone="error">{error}</Alert>}
       {notice && <Alert tone="success">{notice}</Alert>}
       {deploymentError && <Alert tone="warning">{deploymentError}<button type="button" onClick={retryDeployment} disabled={saving} className="ml-2 font-semibold underline">Retry rebuild</button></Alert>}
-      {!extendedCmsReady && <Alert tone="warning">Core prompt and category editing is available. Apply <code>002_cms_features.sql</code> to enable image uploads, AI model/trending metadata, and scheduled publishing.</Alert>}
+      {!extendedCmsReady && <Alert tone="warning">Your database is missing the CMS migration. Apply <code>002_cms_features.sql</code> to enable complete admin permissions, image uploads, advanced prompt metadata, and scheduling fields.</Alert>}
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <nav className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1" aria-label="CMS sections">
