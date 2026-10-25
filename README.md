@@ -4,7 +4,7 @@ PromptAveron is an Astro static site for discovering AI image prompts, with Supa
 
 ## Local development
 
-1. Install Node.js 20 or newer.
+1. Install Node.js 22 or newer.
 2. Install dependencies: `npm ci`
 3. Copy `.env.example` to `.env` and set `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY`.
 4. Run `npm run dev`.
