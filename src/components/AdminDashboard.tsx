@@ -194,6 +194,7 @@ export function AdminDashboard() {
   const [deploymentError, setDeploymentError] = useState('');
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const [extendedCmsReady, setExtendedCmsReady] = useState(false);
   const [section, setSection] = useState<'prompts' | 'categories'>('prompts');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | PromptStatus>('all');
@@ -208,17 +209,25 @@ export function AdminDashboard() {
 
   const reloadData = async () => {
     if (!supabase) return;
-    const [promptResult, categoryResult] = await Promise.all([
+    const [promptResult, categoryResult, extendedSchemaResult] = await Promise.all([
       supabase.from('prompts')
-        .select('id,title,slug,excerpt,description,prompt_text,negative_prompt,featured_image_url,image_alt,style,ai_model,aspect_ratio,seo_title,meta_description,category_id,tags,status,is_featured,is_trending,published_at,scheduled_at,created_at,updated_at')
+        .select('id,title,slug,excerpt,description,prompt_text,negative_prompt,featured_image_url,image_alt,style,aspect_ratio,seo_title,category_id,tags,status,is_featured,published_at,created_at,updated_at')
         .order('updated_at', { ascending: false }),
       supabase.from('categories')
         .select('id,name,slug,description,image_path,seo_title,seo_description,sort_order,is_active')
         .order('sort_order', { ascending: true }),
+      supabase.from('prompts').select('ai_model,meta_description,is_trending,scheduled_at,created_by,updated_by').limit(0),
     ]);
     if (promptResult.error) throw new Error(`Could not load prompts: ${promptResult.error.message}`);
     if (categoryResult.error) throw new Error(`Could not load categories: ${categoryResult.error.message}`);
-    setPrompts((promptResult.data ?? []) as PromptRow[]);
+    setExtendedCmsReady(!extendedSchemaResult.error);
+    setPrompts((promptResult.data ?? []).map((row) => ({
+      ...row,
+      ai_model: null,
+      meta_description: null,
+      is_trending: false,
+      scheduled_at: null,
+    })) as PromptRow[]);
     setCategories((categoryResult.data ?? []) as CategoryRow[]);
   };
 
@@ -342,21 +351,24 @@ export function AdminDashboard() {
       ai_model: promptForm.ai_model.trim() || null,
       aspect_ratio: promptForm.aspect_ratio.split(',').map((item) => item.trim()).filter(Boolean).join(', '),
       seo_title: promptForm.seo_title.trim() || null,
-      meta_description: promptForm.meta_description.trim() || null,
+      ...(extendedCmsReady ? { meta_description: promptForm.meta_description.trim() || null } : {}),
       category_id: promptForm.category_id || null,
       tags: [...new Set(promptForm.tags.split(',').map((item) => item.trim()).filter(Boolean))],
       status: promptForm.status,
       is_featured: promptForm.is_featured,
-      is_trending: promptForm.is_trending,
-      scheduled_at: promptForm.status === 'scheduled' && promptForm.scheduled_at
-        ? new Date(promptForm.scheduled_at).toISOString()
-        : null,
+      ...(extendedCmsReady ? {
+        is_trending: promptForm.is_trending,
+        scheduled_at: promptForm.status === 'scheduled' && promptForm.scheduled_at
+          ? new Date(promptForm.scheduled_at).toISOString()
+          : null,
+        ai_model: promptForm.ai_model.trim() || null,
+        updated_by: user.id,
+        ...(editingPrompt ? {} : { created_by: user.id }),
+      } : {}),
       published_at: promptForm.status === 'published'
         ? editingPrompt?.published_at ?? now
         : editingPrompt?.published_at ?? null,
-      updated_by: user.id,
       updated_at: now,
-      ...(editingPrompt ? {} : { created_by: user.id }),
     };
 
     const result = editingPrompt
@@ -490,6 +502,11 @@ export function AdminDashboard() {
 
   const uploadImage = async (event: ChangeEvent<HTMLInputElement>, onUploaded: (url: string) => void) => {
     if (!supabase || !user) return;
+    if (!extendedCmsReady) {
+      setError('Apply supabase/migrations/002_cms_features.sql to enable image uploads.');
+      event.target.value = '';
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -589,6 +606,7 @@ export function AdminDashboard() {
       {error && <Alert tone="error">{error}</Alert>}
       {notice && <Alert tone="success">{notice}</Alert>}
       {deploymentError && <Alert tone="warning">{deploymentError}<button type="button" onClick={retryDeployment} disabled={saving} className="ml-2 font-semibold underline">Retry rebuild</button></Alert>}
+      {!extendedCmsReady && <Alert tone="warning">Core prompt and category editing is available. Apply <code>002_cms_features.sql</code> to enable image uploads, AI model/trending metadata, and scheduled publishing.</Alert>}
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <nav className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1" aria-label="CMS sections">
@@ -633,7 +651,7 @@ export function AdminDashboard() {
                     <span className="hidden text-xs text-[var(--muted)] md:inline">{new Date(prompt.updated_at).toLocaleDateString()}</span>
                     <button type="button" onClick={() => openPromptEditor(prompt)} className="btn-secondary !px-3 !py-2" aria-label={`Edit ${prompt.title}`}><Pencil className="h-4 w-4" /><span className="ml-2">Edit</span></button>
                     <select aria-label={`Change ${prompt.title} status`} value={prompt.status} disabled={saving} onChange={(event) => void changeStatus(prompt, event.target.value as PromptStatus)} className="max-w-32 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2 py-2 text-xs text-[var(--text)]">
-                      <option value="draft">Draft</option><option value="published">Published</option><option value="scheduled">Scheduled</option><option value="archived">Archived</option>
+                      <option value="draft">Draft</option><option value="published">Published</option>{extendedCmsReady && <><option value="scheduled">Scheduled</option><option value="archived">Archived</option></>}
                     </select>
                     <button type="button" onClick={() => void deletePrompt(prompt)} disabled={saving} className="rounded-xl border border-[var(--border)] p-2.5 text-[var(--muted)] transition hover:border-red-300 hover:text-red-600" aria-label={`Delete ${prompt.title}`}><Trash2 className="h-4 w-4" /></button>
                   </div>
@@ -685,7 +703,7 @@ export function AdminDashboard() {
                 <EditorSection title="Cover image" description="Upload an image or paste an existing public image URL.">
                   {promptForm.featured_image_url && <img src={promptForm.featured_image_url} alt="Prompt cover preview" className="max-h-64 w-full rounded-xl border border-[var(--border)] object-cover" />}
                   <div className="flex flex-col gap-3 sm:flex-row">
-                    <label className="btn-secondary cursor-pointer"><Upload className="mr-2 h-4 w-4" /> Upload image<input type="file" accept="image/*" className="sr-only" disabled={saving} onChange={(event) => void uploadImage(event, (url) => setPromptForm((f) => ({ ...f, featured_image_url: url })))} /></label>
+                    <label className={`btn-secondary ${extendedCmsReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}><Upload className="mr-2 h-4 w-4" /> Upload image<input type="file" accept="image/*" className="sr-only" disabled={saving || !extendedCmsReady} onChange={(event) => void uploadImage(event, (url) => setPromptForm((f) => ({ ...f, featured_image_url: url })))} /></label>
                     <span className="self-center text-xs text-[var(--muted)]">JPG, PNG, WebP up to 8 MB</span>
                   </div>
                   <label className={labelClass}>Image URL<input type="url" value={promptForm.featured_image_url} onChange={(event) => setPromptForm((f) => ({ ...f, featured_image_url: event.target.value }))} className={inputClass} placeholder="https://…" /></label>
@@ -693,17 +711,17 @@ export function AdminDashboard() {
                 </EditorSection>
                 <EditorSection title="Search appearance" description="Optional metadata for search engines and social sharing.">
                   <label className={labelClass}>SEO title<input maxLength={70} value={promptForm.seo_title} onChange={(event) => setPromptForm((f) => ({ ...f, seo_title: event.target.value }))} className={inputClass} placeholder="Defaults to the prompt title." /><span className="mt-1 block text-right text-xs text-[var(--muted)]">{promptForm.seo_title.length}/70</span></label>
-                  <label className={labelClass}>Meta description<textarea rows={3} maxLength={160} value={promptForm.meta_description} onChange={(event) => setPromptForm((f) => ({ ...f, meta_description: event.target.value }))} className={inputClass} placeholder="Defaults to the short summary." /><span className="mt-1 block text-right text-xs text-[var(--muted)]">{promptForm.meta_description.length}/160</span></label>
+                  <label className={labelClass}>Meta description<textarea disabled={!extendedCmsReady} rows={3} maxLength={160} value={promptForm.meta_description} onChange={(event) => setPromptForm((f) => ({ ...f, meta_description: event.target.value }))} className={inputClass} placeholder={extendedCmsReady ? 'Defaults to the short summary.' : 'Apply CMS migration to enable'} /><span className="mt-1 block text-right text-xs text-[var(--muted)]">{promptForm.meta_description.length}/160</span></label>
                 </EditorSection>
               </div>
 
               <aside className="space-y-5">
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
                   <h3 className="flex items-center gap-2 font-semibold text-[var(--text)]"><Settings2 className="h-4 w-4" /> Publishing</h3>
-                  <label className={`${labelClass} mt-4`}>Status<select value={promptForm.status} onChange={(event) => setPromptForm((f) => ({ ...f, status: event.target.value as PromptStatus }))} className={inputClass}><option value="draft">Draft</option><option value="published">Published</option><option value="scheduled">Scheduled</option><option value="archived">Archived</option></select></label>
-                  {promptForm.status === 'scheduled' && <label className={`${labelClass} mt-4`}>Publish date<input required type="datetime-local" value={promptForm.scheduled_at} onChange={(event) => setPromptForm((f) => ({ ...f, scheduled_at: event.target.value }))} className={inputClass} /><span className="mt-1 block text-xs text-[var(--muted)]">The content will be marked scheduled. A site rebuild is still required to publish it.</span></label>}
+                  <label className={`${labelClass} mt-4`}>Status<select value={promptForm.status} onChange={(event) => setPromptForm((f) => ({ ...f, status: event.target.value as PromptStatus }))} className={inputClass}><option value="draft">Draft</option><option value="published">Published</option>{extendedCmsReady && <><option value="scheduled">Scheduled</option><option value="archived">Archived</option></>}</select></label>
+                  {promptForm.status === 'scheduled' && extendedCmsReady && <label className={`${labelClass} mt-4`}>Publish date<input required type="datetime-local" value={promptForm.scheduled_at} onChange={(event) => setPromptForm((f) => ({ ...f, scheduled_at: event.target.value }))} className={inputClass} /><span className="mt-1 block text-xs text-[var(--muted)]">The content will be marked scheduled. A site rebuild is still required to publish it.</span></label>}
                   <label className="mt-4 flex items-center gap-3 rounded-xl bg-[var(--surface-alt)] p-3 text-sm font-medium text-[var(--text)]"><input type="checkbox" checked={promptForm.is_featured} onChange={(event) => setPromptForm((f) => ({ ...f, is_featured: event.target.checked }))} className="h-4 w-4 accent-[var(--primary)]" /> Feature on homepage</label>
-                  <label className="mt-3 flex items-center gap-3 rounded-xl bg-[var(--surface-alt)] p-3 text-sm font-medium text-[var(--text)]"><input type="checkbox" checked={promptForm.is_trending} onChange={(event) => setPromptForm((f) => ({ ...f, is_trending: event.target.checked }))} className="h-4 w-4 accent-[var(--primary)]" /> Mark as trending</label>
+                  <label className="mt-3 flex items-center gap-3 rounded-xl bg-[var(--surface-alt)] p-3 text-sm font-medium text-[var(--text)]"><input type="checkbox" disabled={!extendedCmsReady} checked={promptForm.is_trending} onChange={(event) => setPromptForm((f) => ({ ...f, is_trending: event.target.checked }))} className="h-4 w-4 accent-[var(--primary)]" /> Mark as trending</label>
                   <div className="mt-5 grid gap-2"><button type="submit" disabled={saving} className="btn-primary w-full">{saving ? 'Saving…' : <><Check className="mr-2 h-4 w-4" /> Save prompt</>}</button><button type="button" disabled={saving} onClick={() => setEditorOpen(false)} className="btn-secondary w-full">Cancel</button></div>
                 </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
@@ -711,7 +729,7 @@ export function AdminDashboard() {
                   <label className={`${labelClass} mt-4`}>Category<select value={promptForm.category_id} onChange={(event) => setPromptForm((f) => ({ ...f, category_id: event.target.value }))} className={inputClass}><option value="">Uncategorized</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}{category.is_active ? '' : ' (hidden)'}</option>)}</select></label>
                   <label className={`${labelClass} mt-4`}>Tags<input value={promptForm.tags} onChange={(event) => setPromptForm((f) => ({ ...f, tags: event.target.value }))} className={inputClass} placeholder="portrait, cinematic, editorial" /><span className="mt-1 block text-xs text-[var(--muted)]">Separate tags with commas.</span></label>
                   <label className={`${labelClass} mt-4`}>Style<input value={promptForm.style} onChange={(event) => setPromptForm((f) => ({ ...f, style: event.target.value }))} className={inputClass} placeholder="e.g. Cinematic" /></label>
-                  <label className={`${labelClass} mt-4`}>AI model<input value={promptForm.ai_model} onChange={(event) => setPromptForm((f) => ({ ...f, ai_model: event.target.value }))} className={inputClass} placeholder="e.g. Midjourney" /></label>
+                  <label className={`${labelClass} mt-4`}>AI model<input disabled={!extendedCmsReady} value={promptForm.ai_model} onChange={(event) => setPromptForm((f) => ({ ...f, ai_model: event.target.value }))} className={inputClass} placeholder={extendedCmsReady ? 'e.g. Midjourney' : 'Apply CMS migration to enable'} /></label>
                   <label className={`${labelClass} mt-4`}>Aspect ratios<input value={promptForm.aspect_ratio} onChange={(event) => setPromptForm((f) => ({ ...f, aspect_ratio: event.target.value }))} className={inputClass} placeholder="1:1, 4:5, 9:16" /></label>
                 </div>
               </aside>
