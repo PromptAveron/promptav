@@ -59,7 +59,7 @@ export function PromptLibraryClient({ prompts }: { prompts: PromptRecord[] }) {
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {visible.map((prompt) => (
             <article key={prompt.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-soft">
-              <img src={prompt.imageUrl} alt={prompt.title} className="h-60 w-full object-cover" />
+              <img src={prompt.imageUrl} alt={prompt.imageAlt || prompt.title} className="h-60 w-full object-cover" />
               <div className="p-5">
                 <div className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
                   <span>{prompt.category}</span>

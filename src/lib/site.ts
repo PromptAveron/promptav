@@ -20,6 +20,9 @@ export type PromptRecord = {
   mainPrompt: string;
   negativePrompt?: string;
   imageUrl: string;
+  imageAlt?: string;
+  seoTitle?: string;
+  metaDescription?: string;
   category: string;
   tags: string[];
   aiModel: string;

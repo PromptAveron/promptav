@@ -16,7 +16,7 @@ if (!prompt) return Astro.redirect('/404');
 const similar = promptCatalog.filter((entry) => entry.slug !== prompt.slug).slice(0, 3);
 ---
 
-<BaseLayout title={`${prompt.title} — PromptAveron`} description={prompt.excerpt}>
+<BaseLayout title={prompt.seoTitle || `${prompt.title} — PromptAveron`} description={prompt.metaDescription || prompt.excerpt}>
   <section class="container-shell py-12 md:py-16">
     <div class="mb-6 flex flex-wrap gap-2 text-sm text-[var(--muted)]">
       <a href="/">Home</a>
@@ -29,7 +29,7 @@ const similar = promptCatalog.filter((entry) => entry.slug !== prompt.slug).slic
     <div class="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
       <div>
         <div class="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-soft">
-          <img src={prompt.imageUrl} alt={prompt.title} class="h-[480px] w-full object-cover" />
+          <img src={prompt.imageUrl} alt={prompt.imageAlt || prompt.title} class="h-[480px] w-full object-cover" />
         </div>
         <div class="mt-6 grid gap-3 sm:grid-cols-3">
           {[prompt.imageUrl, prompt.imageUrl, prompt.imageUrl].map((image, index) => (
@@ -68,6 +68,13 @@ const similar = promptCatalog.filter((entry) => entry.slug !== prompt.slug).slic
             <p class="max-h-64 overflow-y-auto whitespace-pre-line text-sm leading-7 text-[var(--text)]">{prompt.mainPrompt}</p>
           </div>
 
+          {prompt.negativePrompt && (
+            <div class="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+              <p class="mb-2 text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Negative prompt</p>
+              <p class="whitespace-pre-line text-sm leading-7 text-[var(--text)]">{prompt.negativePrompt}</p>
+            </div>
+          )}
+
           <div class="mt-6 flex flex-wrap gap-2">
             {prompt.tags.map((tag) => (
               <span class="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-medium text-[var(--muted)]">#{tag}</span>
@@ -99,7 +106,7 @@ const similar = promptCatalog.filter((entry) => entry.slug !== prompt.slug).slic
       <div class="mt-6 grid gap-6 md:grid-cols-3">
         {similar.map((item) => (
           <a href={`/prompts/${item.slug}`} class="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-soft"> 
-            <img src={item.imageUrl} alt={item.title} class="h-48 w-full object-cover" />
+            <img src={item.imageUrl} alt={item.imageAlt || item.title} class="h-48 w-full object-cover" />
             <div class="p-4">
               <div class="text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">{item.category}</div>
               <h3 class="mt-2 font-display text-xl font-bold text-[var(--text)]">{item.title}</h3>

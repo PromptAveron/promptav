@@ -1,11 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getPublishedPrompts } from '../lib/prompts';
+import { getPublishedCategories, getPublishedPrompts } from '../lib/prompts';
 import { formatDate } from '../lib/utils';
-const promptCatalog = await getPublishedPrompts();
+const [promptCatalog, categoryCatalog] = await Promise.all([getPublishedPrompts(), getPublishedCategories()]);
 const featured = promptCatalog.filter((item) => item.featured).slice(0, 4);
 const trending = promptCatalog.filter((item) => item.trending).slice(0, 4);
-const categories = [...new Set(promptCatalog.map((item) => item.category))].slice(0, 6);
+const categories = categoryCatalog.slice(0, 6);
 ---
 
 <BaseLayout title="PromptAveron — AI Prompt Library" description="Discover editorial, cinematic, anime, product, and fantasy AI image prompts.">
@@ -38,7 +38,7 @@ const categories = [...new Set(promptCatalog.map((item) => item.category))].slic
       <div class="grid gap-4 sm:grid-cols-2">
         {featured.slice(0, 4).map((prompt) => (
           <article class="card-surface overflow-hidden transition hover:-translate-y-1">
-            <img src={prompt.imageUrl} alt={prompt.title} class="h-40 w-full object-cover" />
+            <img src={prompt.imageUrl} alt={prompt.imageAlt || prompt.title} class="h-40 w-full object-cover" />
             <div class="p-4">
               <div class="flex items-center justify-between gap-2 text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
                 <span>{prompt.category}</span>
@@ -65,7 +65,7 @@ const categories = [...new Set(promptCatalog.map((item) => item.category))].slic
       <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {featured.map((prompt) => (
           <article class="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-soft">
-            <img src={prompt.imageUrl} alt={prompt.title} class="h-56 w-full object-cover" />
+            <img src={prompt.imageUrl} alt={prompt.imageAlt || prompt.title} class="h-56 w-full object-cover" />
             <div class="p-5">
               <div class="flex items-center justify-between text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
                 <span>{prompt.category}</span>
@@ -96,12 +96,14 @@ const categories = [...new Set(promptCatalog.map((item) => item.category))].slic
       {categories.map((category, index) => (
         <a href="/prompts" class="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-soft">
           <div class="h-40 overflow-hidden">
-            <img src={promptCatalog[index % promptCatalog.length].imageUrl} alt={category} class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+            {category.imagePath || promptCatalog[index % Math.max(promptCatalog.length, 1)]?.imageUrl
+              ? <img src={category.imagePath || promptCatalog[index % Math.max(promptCatalog.length, 1)]?.imageUrl} alt={category.name} class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+              : <div class="h-full bg-[var(--surface-alt)]" aria-hidden="true"></div>}
           </div>
           <div class="flex items-center justify-between p-4">
             <div>
-              <h3 class="font-display text-xl font-bold text-[var(--text)]">{category}</h3>
-              <p class="text-sm text-[var(--muted)]">{promptCatalog.filter((item) => item.category === category).length} prompts</p>
+              <h3 class="font-display text-xl font-bold text-[var(--text)]">{category.name}</h3>
+              <p class="text-sm text-[var(--muted)]">{promptCatalog.filter((item) => item.category === category.name).length} prompts</p>
             </div>
           </div>
         </a>
@@ -125,7 +127,7 @@ const categories = [...new Set(promptCatalog.map((item) => item.category))].slic
               <span class="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]">Trending</span>
               <span class="rounded-full bg-[var(--primary-soft)] px-2 py-1 text-[10px] font-semibold text-[var(--primary)]">{prompt.aiModel}</span>
             </div>
-            <img src={prompt.imageUrl} alt={prompt.title} class="mt-4 h-36 w-full rounded-xl object-cover" />
+            <img src={prompt.imageUrl} alt={prompt.imageAlt || prompt.title} class="mt-4 h-36 w-full rounded-xl object-cover" />
             <h3 class="mt-4 font-display text-xl font-bold text-[var(--text)]">{prompt.title}</h3>
             <p class="mt-2 text-sm text-[var(--muted)]">{prompt.excerpt}</p>
           </div>

@@ -13,7 +13,7 @@ Without Supabase environment variables, the local site uses the clearly identifi
 
 ## Supabase project setup
 
-1. In the Supabase SQL Editor, run [`supabase/migrations/001_initial_schema.sql`](./supabase/migrations/001_initial_schema.sql). The migration preserves existing prompt records and makes `prompt_text` and `main_prompt` compatible.
+1. In the Supabase SQL Editor, run [`supabase/migrations/001_initial_schema.sql`](./supabase/migrations/001_initial_schema.sql), then [`supabase/migrations/002_cms_features.sql`](./supabase/migrations/002_cms_features.sql). The CMS migration adds editorial metadata, secure admin policies, and the public image bucket without replacing existing prompts.
 2. Create an administrator in Supabase Authentication (email/password). Public sign-up should remain disabled.
 3. Add that user to `profiles` from the SQL Editor, replacing the UUID with the Auth user's ID:
 
@@ -36,7 +36,8 @@ Without Supabase environment variables, the local site uses the clearly identifi
 
 ## Admin and publishing
 
-- Visit `/admin/`, sign in with the administrator account, save draft prompts, and publish them.
+- Visit `/admin/`, sign in with the administrator account, and manage prompt drafts, published and archived content, categories, featured/trending placement, SEO metadata, and cover images.
+- The CMS supports prompt search and status filtering, editable prompt details, category organization, and image URL or Supabase Storage uploads. Image uploads use the `prompt-images` bucket and are limited to 8 MB.
 - The dashboard verifies the user's `profiles.role` through Supabase RLS. Hiding `/admin/` is not a security boundary.
 - Publishing calls the `publish-site` Supabase Edge Function. The function checks the authenticated user and admin role before dispatching the GitHub workflow.
 - Deploy the Edge Function from a trusted machine with Supabase CLI access:
@@ -61,7 +62,7 @@ npm run build
 npm run preview
 ```
 
-The build creates HTML for every currently published prompt, plus sitemap and robots files. No published prompts is a valid empty state.
+The build creates HTML for every currently published prompt, plus sitemap and robots files. No published prompts is a valid empty state. Edits to published prompts and categories request a new static-site build; confirm the `publish-site` Edge Function is deployed and configured for automatic rebuilds.
 
 ## Deployment URL
 
