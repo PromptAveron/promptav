@@ -37,7 +37,8 @@ create table if not exists prompts (
   short_description text,
   description text,
   content_blocks jsonb default '[]'::jsonb,
-  main_prompt text not null,
+  main_prompt text,
+  prompt_text text,
   negative_prompt text,
   featured_image_url text,
   thumbnail_url text,
@@ -70,6 +71,7 @@ create table if not exists prompts (
   robots_directive text default 'index,follow',
   status text not null default 'draft' check (status in ('draft','published','scheduled','archived')),
   is_featured boolean not null default false,
+  is_trending boolean not null default false,
   published_at timestamptz,
   scheduled_at timestamptz,
   created_by uuid references auth.users(id),
@@ -146,6 +148,30 @@ create index if not exists idx_categories_slug on categories(slug);
 create index if not exists idx_tags_slug on tags(slug);
 create index if not exists idx_prompt_variants_prompt_id on prompt_variants(prompt_id, sort_order);
 
+alter table prompts add column if not exists prompt_text text;
+alter table prompts add column if not exists main_prompt text;
+update prompts set prompt_text = coalesce(prompt_text, main_prompt, '') where prompt_text is null;
+update prompts set main_prompt = coalesce(main_prompt, prompt_text, '') where main_prompt is null;
+alter table prompts alter column prompt_text set not null;
+alter table prompts alter column main_prompt set not null;
+
+create or replace function public.sync_prompt_text_columns()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.prompt_text := coalesce(nullif(new.prompt_text, ''), new.main_prompt, '');
+  new.main_prompt := coalesce(nullif(new.main_prompt, ''), new.prompt_text, '');
+  return new;
+end;
+$$;
+
+drop trigger if exists sync_prompt_text_columns on prompts;
+create trigger sync_prompt_text_columns
+before insert or update of prompt_text, main_prompt on prompts
+for each row execute function public.sync_prompt_text_columns();
+
 alter table profiles enable row level security;
 alter table categories enable row level security;
 alter table tags enable row level security;
@@ -157,20 +183,76 @@ alter table collections enable row level security;
 alter table collection_prompts enable row level security;
 alter table creators enable row level security;
 
-create policy "Public can read published content" on prompts for select using (status = 'published');
-create policy "Public can read published categories" on categories for select using (true);
-create policy "Public can read published collections" on collections for select using (status = 'published');
-create policy "Public can read creators" on creators for select using (true);
-create policy "Public can read tags" on tags for select using (true);
-create policy "Public can read prompt tags" on prompt_tags for select using (true);
-create policy "Public can read prompt variants" on prompt_variants for select using (true);
-create policy "Public can read images" on prompt_images for select using (true);
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  );
+$$;
 
-create policy "Users can view their own profile" on profiles for select using (auth.uid() = id);
-create policy "Users can update their own profile" on profiles for update using (auth.uid() = id);
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to anon, authenticated;
 
-create policy "Admins can manage all content" on prompts for all using (exists (select 1 from profiles where id = auth.uid() and role = 'admin')) with check (exists (select 1 from profiles where id = auth.uid() and role = 'admin'));
-create policy "Admins can manage categories" on categories for all using (exists (select 1 from profiles where id = auth.uid() and role = 'admin')) with check (exists (select 1 from profiles where id = auth.uid() and role = 'admin'));
-create policy "Admins can manage tags" on tags for all using (exists (select 1 from profiles where id = auth.uid() and role = 'admin')) with check (exists (select 1 from profiles where id = auth.uid() and role = 'admin'));
-create policy "Admins can manage collections" on collections for all using (exists (select 1 from profiles where id = auth.uid() and role = 'admin')) with check (exists (select 1 from profiles where id = auth.uid() and role = 'admin'));
-create policy "Admins can manage creators" on creators for all using (exists (select 1 from profiles where id = auth.uid() and role = 'admin')) with check (exists (select 1 from profiles where id = auth.uid() and role = 'admin'));
+grant select on prompts, categories, tags, prompt_tags, prompt_variants, prompt_images, collections, collection_prompts, creators to anon, authenticated;
+grant select on profiles to authenticated;
+grant insert, update, delete on prompts, categories, tags, prompt_tags, prompt_variants, prompt_images, collections, collection_prompts, creators to authenticated;
+grant insert, update, delete on profiles to authenticated;
+
+drop policy if exists "Public can read published prompts" on prompts;
+create policy "Public can read published prompts" on prompts for select to anon, authenticated using (status = 'published' or public.is_admin());
+drop policy if exists "Public can read categories" on categories;
+create policy "Public can read categories" on categories for select to anon, authenticated using (true);
+drop policy if exists "Public can read published collections" on collections;
+create policy "Public can read published collections" on collections for select to anon, authenticated using (status = 'published' or public.is_admin());
+drop policy if exists "Public can read creators" on creators;
+create policy "Public can read creators" on creators for select to anon, authenticated using (true);
+drop policy if exists "Public can read tags" on tags;
+create policy "Public can read tags" on tags for select to anon, authenticated using (true);
+drop policy if exists "Public can read tags for published prompts" on prompt_tags;
+create policy "Public can read tags for published prompts" on prompt_tags for select to anon, authenticated using (
+  public.is_admin() or exists (select 1 from prompts p where p.id = prompt_id and p.status = 'published')
+);
+drop policy if exists "Public can read variants for published prompts" on prompt_variants;
+create policy "Public can read variants for published prompts" on prompt_variants for select to anon, authenticated using (
+  public.is_admin() or exists (select 1 from prompts p where p.id = prompt_id and p.status = 'published')
+);
+drop policy if exists "Public can read images for published prompts" on prompt_images;
+create policy "Public can read images for published prompts" on prompt_images for select to anon, authenticated using (
+  public.is_admin() or exists (select 1 from prompts p where p.id = prompt_id and p.status = 'published')
+);
+drop policy if exists "Public can read prompts in published collections" on collection_prompts;
+create policy "Public can read prompts in published collections" on collection_prompts for select to anon, authenticated using (
+  public.is_admin() or exists (
+    select 1 from collections c join prompts p on p.id = prompt_id
+    where c.id = collection_id and c.status = 'published' and p.status = 'published'
+  )
+);
+drop policy if exists "Users can view own profile; admins can view all" on profiles;
+create policy "Users can view own profile; admins can view all" on profiles for select to authenticated using (auth.uid() = id or public.is_admin());
+
+drop policy if exists "Admins can manage profiles" on profiles;
+create policy "Admins can manage profiles" on profiles for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage prompts" on prompts;
+create policy "Admins can manage prompts" on prompts for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage categories" on categories;
+create policy "Admins can manage categories" on categories for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage tags" on tags;
+create policy "Admins can manage tags" on tags for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage prompt tags" on prompt_tags;
+create policy "Admins can manage prompt tags" on prompt_tags for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage variants" on prompt_variants;
+create policy "Admins can manage variants" on prompt_variants for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage prompt images" on prompt_images;
+create policy "Admins can manage prompt images" on prompt_images for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage collections" on collections;
+create policy "Admins can manage collections" on collections for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage collection prompts" on collection_prompts;
+create policy "Admins can manage collection prompts" on collection_prompts for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins can manage creators" on creators;
+create policy "Admins can manage creators" on creators for all to authenticated using (public.is_admin()) with check (public.is_admin());

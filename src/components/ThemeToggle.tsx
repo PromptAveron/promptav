@@ -7,7 +7,9 @@ export function ThemeToggle() {
   useEffect(() => {
     const saved = localStorage.getItem('promptaveron-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initial = saved ?? (prefersDark ? 'dark' : 'light');
+    const initial: 'light' | 'dark' = saved === 'light' || saved === 'dark'
+      ? saved
+      : prefersDark ? 'dark' : 'light';
     setTheme(initial);
     document.documentElement.classList.toggle('dark', initial === 'dark');
   }, []);

@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://promptavero.github.io/sitemap-index.xml
+Sitemap: https://promptaveron.github.io/sitemap.xml
+Disallow: /admin/

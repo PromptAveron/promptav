@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: 'PromptAveron',
   description: 'Creative AI image prompts for portraits, photography, anime, fantasy, product visuals, and editorial storytelling.',
-  url: 'https://promptavero.github.io',
+  url: 'https://promptaveron.github.io',
   defaultTheme: 'light',
   social: {
     x: 'https://x.com',

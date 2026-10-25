@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { PromptLibraryClient } from '../components/PromptLibraryClient';
-import { promptCatalog } from '../lib/site';
+import { getPublishedPrompts } from '../lib/prompts';
+const promptCatalog = await getPublishedPrompts();
 ---
 
 <BaseLayout title="Prompt Library — PromptAveron" description="Browse the full library of AI image prompts.">

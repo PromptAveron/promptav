@@ -1,7 +1,9 @@
-import { promptCatalog } from '../lib/site';
+import { getPublishedPrompts } from '../lib/prompts';
+import { siteConfig } from '../lib/site';
 
 export async function GET() {
-  const baseUrl = 'https://promptavero.github.io';
+  const baseUrl = siteConfig.url;
+  const promptCatalog = await getPublishedPrompts();
   const urls = [
     '',
     '/prompts',
@@ -17,7 +19,7 @@ export async function GET() {
       (path) => `
     <url>
       <loc>${baseUrl}${path}</loc>
-      <lastmod>2025-10-25</lastmod>
+      <lastmod>${new Date().toISOString().slice(0, 10)}</lastmod>
     </url>`,
     )
     .join('')}

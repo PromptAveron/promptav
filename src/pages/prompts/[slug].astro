@@ -1,15 +1,18 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { CopyPromptButton } from '../../components/CopyPromptButton';
-import { promptCatalog } from '../../lib/site';
+import { getPublishedPrompts } from '../../lib/prompts';
 import { formatDate } from '../../lib/utils';
 
 export async function getStaticPaths() {
+  const promptCatalog = await getPublishedPrompts();
   return promptCatalog.map((prompt) => ({ params: { slug: prompt.slug } }));
 }
 
 const { slug } = Astro.params;
-const prompt = promptCatalog.find((entry) => entry.slug === slug) ?? promptCatalog[0];
+const promptCatalog = await getPublishedPrompts();
+const prompt = promptCatalog.find((entry) => entry.slug === slug);
+if (!prompt) return Astro.redirect('/404');
 const similar = promptCatalog.filter((entry) => entry.slug !== prompt.slug).slice(0, 3);
 ---
 

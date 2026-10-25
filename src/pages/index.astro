@@ -1,10 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { promptCatalog } from '../lib/site';
+import { getPublishedPrompts } from '../lib/prompts';
 import { formatDate } from '../lib/utils';
+const promptCatalog = await getPublishedPrompts();
 const featured = promptCatalog.filter((item) => item.featured).slice(0, 4);
 const trending = promptCatalog.filter((item) => item.trending).slice(0, 4);
-const categories = ['AI Portraits', 'Realistic Photography', 'Cinematic Photography', 'Anime and Manga', 'Fantasy Art', 'Digital Illustration'];
+const categories = [...new Set(promptCatalog.map((item) => item.category))].slice(0, 6);
 ---
 
 <BaseLayout title="PromptAveron — AI Prompt Library" description="Discover editorial, cinematic, anime, product, and fantasy AI image prompts.">
@@ -47,6 +48,7 @@ const categories = ['AI Portraits', 'Realistic Photography', 'Cinematic Photogra
             </div>
           </article>
         ))}
+        {featured.length === 0 && <p class="text-sm text-[var(--muted)]">New featured prompts are on the way. Browse the full library to explore what is available.</p>}
       </div>
     </div>
   </section>
@@ -78,6 +80,7 @@ const categories = ['AI Portraits', 'Realistic Photography', 'Cinematic Photogra
             </div>
           </article>
         ))}
+        {featured.length === 0 && <p class="text-sm text-[var(--muted)]">No featured prompts yet.</p>}
       </div>
     </div>
   </section>
@@ -98,11 +101,12 @@ const categories = ['AI Portraits', 'Realistic Photography', 'Cinematic Photogra
           <div class="flex items-center justify-between p-4">
             <div>
               <h3 class="font-display text-xl font-bold text-[var(--text)]">{category}</h3>
-              <p class="text-sm text-[var(--muted)]">{Math.max(12, (index + 2) * 6)} prompts</p>
+              <p class="text-sm text-[var(--muted)]">{promptCatalog.filter((item) => item.category === category).length} prompts</p>
             </div>
           </div>
         </a>
       ))}
+      {categories.length === 0 && <p class="text-sm text-[var(--muted)]">Categories will appear as prompts are published.</p>}
     </div>
   </section>
 
@@ -126,6 +130,7 @@ const categories = ['AI Portraits', 'Realistic Photography', 'Cinematic Photogra
             <p class="mt-2 text-sm text-[var(--muted)]">{prompt.excerpt}</p>
           </div>
         ))}
+        {trending.length === 0 && <p class="text-sm text-[var(--muted)]">There are no trending prompts yet.</p>}
       </div>
     </div>
   </section>

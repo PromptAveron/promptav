@@ -3,7 +3,7 @@ import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
-  site: 'https://promptavero.github.io',
+  site: 'https://promptaveron.github.io',
   base: '/',
   trailingSlash: 'ignore',
   integrations: [react(), tailwind()],
