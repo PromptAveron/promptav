@@ -1,0 +1,30 @@
+---
+import { siteConfig } from '../lib/site';
+---
+
+<footer class="border-t border-[var(--border)] bg-[var(--surface)]">
+  <div class="container-shell grid gap-10 py-12 md:grid-cols-3">
+    <div>
+      <div class="font-display text-2xl font-black tracking-tight">{siteConfig.name}</div>
+      <p class="mt-3 max-w-sm text-sm text-[var(--muted)]">A premium curation of creative AI image prompts for visual storytellers and brands.</p>
+    </div>
+
+    <div>
+      <h3 class="font-display text-lg font-bold">Explore</h3>
+      <ul class="mt-3 space-y-2 text-sm text-[var(--muted)]">
+        <li><a href="/prompts">Prompt library</a></li>
+        <li><a href="/categories">Categories</a></li>
+        <li><a href="/collections">Collections</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="font-display text-lg font-bold">Company</h3>
+      <ul class="mt-3 space-y-2 text-sm text-[var(--muted)]">
+        <li><a href="/admin">Admin</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>

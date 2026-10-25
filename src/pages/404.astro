@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page not found — PromptAveron" description="The page you requested could not be found.">
+  <section class="container-shell py-24 text-center">
+    <p class="eyebrow">404</p>
+    <h1 class="mt-6 font-display text-5xl font-black tracking-tight text-[var(--text)]">This page has wandered off.</h1>
+    <p class="mx-auto mt-4 max-w-xl text-[var(--muted)]">The prompt or resource you were looking for is unavailable or may have moved.</p>
+    <div class="mt-8 flex justify-center gap-3">
+      <a href="/" class="btn-primary">Return home</a>
+      <a href="/prompts" class="btn-secondary">Browse prompts</a>
+    </div>
+  </section>
+</BaseLayout>

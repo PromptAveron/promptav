@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { AdminDashboard } from '../components/AdminDashboard';
+---
+
+<BaseLayout title="Admin — PromptAveron" description="Protected administrative dashboard.">
+  <section class="container-shell py-16">
+    <AdminDashboard client:load />
+  </section>
+</BaseLayout>

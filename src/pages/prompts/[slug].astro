@@ -1,0 +1,109 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CopyPromptButton } from '../../components/CopyPromptButton';
+import { promptCatalog } from '../../lib/site';
+import { formatDate } from '../../lib/utils';
+
+export async function getStaticPaths() {
+  return promptCatalog.map((prompt) => ({ params: { slug: prompt.slug } }));
+}
+
+const { slug } = Astro.params;
+const prompt = promptCatalog.find((entry) => entry.slug === slug) ?? promptCatalog[0];
+const similar = promptCatalog.filter((entry) => entry.slug !== prompt.slug).slice(0, 3);
+---
+
+<BaseLayout title={`${prompt.title} — PromptAveron`} description={prompt.excerpt}>
+  <section class="container-shell py-12 md:py-16">
+    <div class="mb-6 flex flex-wrap gap-2 text-sm text-[var(--muted)]">
+      <a href="/">Home</a>
+      <span>/</span>
+      <a href="/prompts">Prompts</a>
+      <span>/</span>
+      <span class="text-[var(--text)]">{prompt.title}</span>
+    </div>
+
+    <div class="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
+      <div>
+        <div class="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-soft">
+          <img src={prompt.imageUrl} alt={prompt.title} class="h-[480px] w-full object-cover" />
+        </div>
+        <div class="mt-6 grid gap-3 sm:grid-cols-3">
+          {[prompt.imageUrl, prompt.imageUrl, prompt.imageUrl].map((image, index) => (
+            <button type="button" class="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1" aria-label={`View image ${index + 1}`}>
+              <img src={image} alt={`${prompt.title} thumbnail ${index + 1}`} class="h-24 w-full rounded-lg object-cover" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <aside class="space-y-6">
+        <div class="rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-soft">
+          <div class="flex items-center justify-between gap-3">
+            <span class="eyebrow">{prompt.category}</span>
+            <span class="rounded-full bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--primary)]">{prompt.aiModel}</span>
+          </div>
+          <h1 class="mt-6 font-display text-4xl font-black tracking-tight text-[var(--text)]">{prompt.title}</h1>
+          <p class="mt-4 text-[var(--muted)]">{prompt.shortDescription}</p>
+
+          <div class="mt-6 flex flex-wrap items-center gap-3 text-sm text-[var(--muted)]">
+            <span>Published {formatDate(prompt.publishedAt)}</span>
+            <span>•</span>
+            <span>{prompt.style}</span>
+          </div>
+
+          <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+            <CopyPromptButton client:load text={prompt.mainPrompt} label="Copy Prompt" />
+            <a href="/prompts" class="btn-secondary flex-1">Use Prompt</a>
+          </div>
+
+          <div class="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+            <div class="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
+              <span>Image Prompt</span>
+              <span>{prompt.mainPrompt.length} chars</span>
+            </div>
+            <p class="max-h-64 overflow-y-auto whitespace-pre-line text-sm leading-7 text-[var(--text)]">{prompt.mainPrompt}</p>
+          </div>
+
+          <div class="mt-6 flex flex-wrap gap-2">
+            {prompt.tags.map((tag) => (
+              <span class="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-medium text-[var(--muted)]">#{tag}</span>
+            ))}
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="container-shell pb-16">
+    <div class="grid gap-6 lg:grid-cols-3">
+      <article class="card-surface p-6 lg:col-span-2">
+        <h2 class="font-display text-3xl font-black tracking-tight text-[var(--text)]">About this prompt</h2>
+        <p class="mt-4 text-[var(--muted)]">{prompt.description}</p>
+      </article>
+      <div class="card-surface p-6">
+        <h3 class="font-display text-2xl font-bold text-[var(--text)]">Prompt details</h3>
+        <ul class="mt-4 space-y-2 text-sm text-[var(--muted)]">
+          <li><strong class="text-[var(--text)]">Aspect ratios:</strong> {prompt.aspectRatios.join(', ')}</li>
+          <li><strong class="text-[var(--text)]">AI model:</strong> {prompt.aiModel}</li>
+          <li><strong class="text-[var(--text)]">Style:</strong> {prompt.style}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-12">
+      <h2 class="font-display text-3xl font-black tracking-tight text-[var(--text)]">Related prompts</h2>
+      <div class="mt-6 grid gap-6 md:grid-cols-3">
+        {similar.map((item) => (
+          <a href={`/prompts/${item.slug}`} class="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-soft"> 
+            <img src={item.imageUrl} alt={item.title} class="h-48 w-full object-cover" />
+            <div class="p-4">
+              <div class="text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">{item.category}</div>
+              <h3 class="mt-2 font-display text-xl font-bold text-[var(--text)]">{item.title}</h3>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

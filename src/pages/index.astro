@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { promptCatalog } from '../lib/site';
+import { formatDate } from '../lib/utils';
+const featured = promptCatalog.filter((item) => item.featured).slice(0, 4);
+const trending = promptCatalog.filter((item) => item.trending).slice(0, 4);
+const categories = ['AI Portraits', 'Realistic Photography', 'Cinematic Photography', 'Anime and Manga', 'Fantasy Art', 'Digital Illustration'];
+---
+
+<BaseLayout title="PromptAveron — AI Prompt Library" description="Discover editorial, cinematic, anime, product, and fantasy AI image prompts.">
+  <section class="container-shell py-16 md:py-20">
+    <div class="grid gap-10 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
+      <div>
+        <span class="eyebrow">Curated creative prompts</span>
+        <h1 class="mt-6 max-w-xl font-display text-5xl font-black leading-none tracking-[-0.05em] text-[var(--text)] md:text-6xl">
+          Find Your Next Great AI Image Prompt.
+        </h1>
+        <p class="mt-6 max-w-xl text-lg text-[var(--muted)]">
+          Discover creative, ready-to-use prompts for portraits, cinematic photography, anime, illustration, fantasy, product visuals, social media, and more.
+        </p>
+
+        <div class="mt-8 flex flex-col gap-4 sm:flex-row">
+          <div class="flex flex-1 items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-soft">
+            <svg class="h-5 w-5 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg>
+            <input aria-label="Search prompts" class="w-full border-0 bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none" placeholder="Search prompts, styles, subjects, or AI tools..." />
+          </div>
+          <a href="/prompts" class="btn-primary">Explore Prompts</a>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-2">
+          {['Portraits', 'Photography', 'Anime', 'Fantasy', 'Product', 'Editorial'].map((label) => (
+            <a href="/prompts" class="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--muted)] hover:text-[var(--primary)]">{label}</a>
+          ))}
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        {featured.slice(0, 4).map((prompt) => (
+          <article class="card-surface overflow-hidden transition hover:-translate-y-1">
+            <img src={prompt.imageUrl} alt={prompt.title} class="h-40 w-full object-cover" />
+            <div class="p-4">
+              <div class="flex items-center justify-between gap-2 text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
+                <span>{prompt.category}</span>
+                <span>{prompt.aiModel}</span>
+              </div>
+              <h2 class="mt-2 font-display text-xl font-bold text-[var(--text)]">{prompt.title}</h2>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="border-y border-[var(--border)] bg-[var(--surface)]">
+    <div class="container-shell py-10">
+      <div class="mb-8 flex items-end justify-between gap-4">
+        <div>
+          <p class="eyebrow">Featured collection</p>
+          <h2 class="mt-3 font-display text-3xl font-black tracking-tight text-[var(--text)]">Featured prompts</h2>
+        </div>
+        <a href="/prompts" class="text-sm font-semibold text-[var(--primary)]">View all prompts</a>
+      </div>
+      <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {featured.map((prompt) => (
+          <article class="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-soft">
+            <img src={prompt.imageUrl} alt={prompt.title} class="h-56 w-full object-cover" />
+            <div class="p-5">
+              <div class="flex items-center justify-between text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
+                <span>{prompt.category}</span>
+                <span>{prompt.aiModel}</span>
+              </div>
+              <h3 class="mt-3 font-display text-2xl font-bold text-[var(--text)]">{prompt.title}</h3>
+              <p class="mt-3 text-sm text-[var(--muted)]">{prompt.shortDescription}</p>
+              <div class="mt-5 flex items-center justify-between">
+                <span class="text-xs font-medium text-[var(--muted)]">{formatDate(prompt.publishedAt)}</span>
+                <a href={`/prompts/${prompt.slug}`} class="text-sm font-semibold text-[var(--primary)]">Open</a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="container-shell py-16">
+    <div class="mb-8 flex items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow">Browse by focus</p>
+        <h2 class="mt-3 font-display text-3xl font-black tracking-tight text-[var(--text)]">Browse categories</h2>
+      </div>
+    </div>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {categories.map((category, index) => (
+        <a href="/prompts" class="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-soft">
+          <div class="h-40 overflow-hidden">
+            <img src={promptCatalog[index % promptCatalog.length].imageUrl} alt={category} class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          </div>
+          <div class="flex items-center justify-between p-4">
+            <div>
+              <h3 class="font-display text-xl font-bold text-[var(--text)]">{category}</h3>
+              <p class="text-sm text-[var(--muted)]">{Math.max(12, (index + 2) * 6)} prompts</p>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="border-t border-[var(--border)] bg-[var(--surface-alt)]">
+    <div class="container-shell py-16">
+      <div class="mb-8 flex items-end justify-between gap-4">
+        <div>
+          <p class="eyebrow">Trending now</p>
+          <h2 class="mt-3 font-display text-3xl font-black tracking-tight text-[var(--text)]">Trending this week</h2>
+        </div>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        {trending.map((prompt) => (
+          <div class="card-surface p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]">Trending</span>
+              <span class="rounded-full bg-[var(--primary-soft)] px-2 py-1 text-[10px] font-semibold text-[var(--primary)]">{prompt.aiModel}</span>
+            </div>
+            <img src={prompt.imageUrl} alt={prompt.title} class="mt-4 h-36 w-full rounded-xl object-cover" />
+            <h3 class="mt-4 font-display text-xl font-bold text-[var(--text)]">{prompt.title}</h3>
+            <p class="mt-2 text-sm text-[var(--muted)]">{prompt.excerpt}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="container-shell py-16">
+    <div class="grid gap-6 lg:grid-cols-3">
+      <div class="card-surface p-8">
+        <p class="eyebrow">How it works</p>
+        <h3 class="mt-4 font-display text-2xl font-black text-[var(--text)]">Find the right prompt in three steps.</h3>
+        <ol class="mt-6 space-y-4 text-[var(--muted)]">
+          <li><span class="font-bold text-[var(--text)]">1.</span> Search by style, subject, or AI model.</li>
+          <li><span class="font-bold text-[var(--text)]">2.</span> Explore the detailed prompt and variants.</li>
+          <li><span class="font-bold text-[var(--text)]">3.</span> Copy and generate with your preferred tool.</li>
+        </ol>
+      </div>
+      <div class="card-surface p-8 lg:col-span-2">
+        <p class="eyebrow">Collections</p>
+        <h3 class="mt-4 font-display text-2xl font-black text-[var(--text)]">Curated collections for focused creative work</h3>
+        <div class="mt-6 grid gap-4 md:grid-cols-2">
+          {['Portrait photography', 'Social content', 'Fantasy character design', 'Product storytelling'].map((label) => (
+            <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] p-4 text-sm font-medium text-[var(--text)]">{label}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

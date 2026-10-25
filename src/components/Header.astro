@@ -1,0 +1,42 @@
+---
+import { Search, Sparkles } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
+import { siteConfig } from '../lib/site';
+---
+
+<header class="sticky top-0 z-50 border-b border-[var(--border)] bg-[rgba(247,248,252,0.8)] backdrop-blur-xl dark:bg-[rgba(12,16,32,0.8)]">
+  <div class="container-shell flex h-20 items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]">
+        <Sparkles className="h-5 w-5" />
+      </div>
+      <div>
+        <div class="font-display text-xl font-black tracking-tight text-[var(--text)]">{siteConfig.name}</div>
+      </div>
+    </a>
+
+    <nav class="hidden items-center gap-8 text-sm font-medium text-[var(--muted)] md:flex">
+      <a href="/">Home</a>
+      <a href="/prompts">Prompts</a>
+      <a href="/categories">Categories</a>
+      <a href="/collections">Collections</a>
+      <a href="/admin">Admin</a>
+    </nav>
+
+    <div class="hidden items-center gap-3 md:flex">
+      <a href="/prompts" class="btn-secondary">
+        <Search className="mr-2 h-4 w-4" />
+        Search
+      </a>
+      <ThemeToggle client:load />
+      <a href="/prompts" class="btn-primary">Explore Prompts</a>
+    </div>
+
+    <div class="flex items-center gap-2 md:hidden">
+      <ThemeToggle client:load />
+      <button class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)]" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" class="h-5 w-5 text-[var(--text)]" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>

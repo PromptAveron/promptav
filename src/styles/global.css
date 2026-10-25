@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Inter+Tight:wght@500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f7f8fc;
+  --surface: #ffffff;
+  --surface-alt: #f0f2fa;
+  --text: #171a2b;
+  --muted: #60677b;
+  --border: #e3e6f0;
+  --primary: #625bff;
+  --primary-hover: #5047ea;
+  --primary-soft: #eeecff;
+  --success: #16845b;
+  --warning: #b86b0c;
+  --error: #d63c51;
+}
+
+html.dark {
+  --bg: #0c1020;
+  --surface: #151b2d;
+  --surface-alt: #1d263b;
+  --text: #f4f5fc;
+  --muted: #adb5ca;
+  --border: #2a344b;
+  --primary: #8982ff;
+  --primary-hover: #a39dff;
+  --primary-soft: rgba(137, 130, 255, 0.12);
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+::selection {
+  background: rgba(98, 91, 255, 0.2);
+}
+
+@layer components {
+  .container-shell {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .card-surface {
+    @apply rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-soft;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)];
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold text-[var(--text)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2;
+  }
+}

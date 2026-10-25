@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { PromptLibraryClient } from '../components/PromptLibraryClient';
+import { promptCatalog } from '../lib/site';
+---
+
+<BaseLayout title="Prompt Library — PromptAveron" description="Browse the full library of AI image prompts.">
+  <section class="container-shell py-16">
+    <PromptLibraryClient client:load prompts={promptCatalog} />
+  </section>
+</BaseLayout>
